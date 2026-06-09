@@ -2,67 +2,39 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <utility>
 
 namespace ar_overlay {
 
-Pipeline::Pipeline(std::string_view filePath)
-  : filePath_(filePath) {
-
-  pipeline_ = gst_pipeline_new("main_pipeline");
+Pipeline::Pipeline(std::string_view filePath) {
+  pipeline_.reset(gst_pipeline_new("main_pipeline"));
   GstElement* decodebin = gst_element_factory_make("uridecodebin", "decoder");
 
   if (!pipeline_ || !decodebin) {
     throw std::runtime_error("Failed to create GStreamer elements");
   }
 
-  g_object_set(G_OBJECT(decodebin), "uri", filePath_.c_str(), nullptr);
+  const std::string uri(filePath);
+  g_object_set(G_OBJECT(decodebin), "uri", uri.c_str(), nullptr);
 
-  g_signal_connect(decodebin, "pad-added", G_CALLBACK(onPadAdded), pipeline_);
+  g_signal_connect(decodebin, "pad-added", G_CALLBACK(onPadAdded), pipeline_.get());
 
-  gst_bin_add(GST_BIN(pipeline_), decodebin);
+  gst_bin_add(GST_BIN(pipeline_.get()), decodebin);
 
-  mainLoop_ = g_main_loop_new(nullptr, FALSE);
+  mainLoop_.reset(g_main_loop_new(nullptr, FALSE));
 
-  GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline_));
+  GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline_.get()));
   gst_bus_add_watch(bus, onBusMessage, this);
   gst_object_unref(bus);
 }
 
-Pipeline::~Pipeline() {
-  if (pipeline_) {
-    gst_element_set_state(pipeline_, GST_STATE_NULL);
-    gst_object_unref(pipeline_);
+bool Pipeline::run() {
+  GstStateChangeReturn ret = gst_element_set_state(pipeline_.get(), GST_STATE_PLAYING);
+  if (ret == GST_STATE_CHANGE_FAILURE) {
+    std::cerr << "Failed to start pipeline\n";
+    return false;
   }
-  if (mainLoop_) {
-    g_main_loop_unref(mainLoop_);
-  }
-}
-
-Pipeline::Pipeline(Pipeline&& other) noexcept
-  : pipeline_(std::exchange(other.pipeline_, nullptr))
-  , mainLoop_(std::exchange(other.mainLoop_, nullptr))
-  , filePath_(std::move(other.filePath_)) {}
-
-Pipeline& Pipeline::operator=(Pipeline&& other) noexcept {
-  if (this != &other) {
-    if (pipeline_) {
-      gst_element_set_state(pipeline_, GST_STATE_NULL);
-      gst_object_unref(pipeline_);
-    }
-    if (mainLoop_) {
-      g_main_loop_unref(mainLoop_);
-    }
-    pipeline_ = std::exchange(other.pipeline_, nullptr);
-    mainLoop_ = std::exchange(other.mainLoop_, nullptr);
-    filePath_ = std::move(other.filePath_);
-  }
-  return *this;
-}
-
-void Pipeline::run() {
-  gst_element_set_state(pipeline_, GST_STATE_PLAYING);
-  g_main_loop_run(mainLoop_);
+  g_main_loop_run(mainLoop_.get());
+  return !hasError_;
 }
 
 void Pipeline::onPadAdded(GstElement* /*src*/, GstPad* newPad, gpointer data) {
@@ -122,12 +94,13 @@ void Pipeline::handleMessage(GstMessage* msg) {
       std::cerr << "Error: " << err->message << "\n";
       g_error_free(err);
       g_free(debug);
-      g_main_loop_quit(mainLoop_);
+      hasError_ = true;
+      g_main_loop_quit(mainLoop_.get());
       break;
     }
     case GST_MESSAGE_EOS:
       std::cout << "End of stream\n";
-      g_main_loop_quit(mainLoop_);
+      g_main_loop_quit(mainLoop_.get());
       break;
     default:
       break;

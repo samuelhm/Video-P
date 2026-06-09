@@ -15,7 +15,9 @@ int main(int argc, char* argv[]) {
 
   try {
     ar_overlay::Pipeline pipeline(argv[1]);
-    pipeline.run();
+    if (!pipeline.run()) {
+      return 1;
+    }
   } catch (const std::exception& e) {
     std::cerr << "Fatal error: " << e.what() << '\n';
     return 1;
