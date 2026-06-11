@@ -1,10 +1,11 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 
 namespace ar_overlay {
 
-std::string loadShaderFile(std::string_view path);
+std::optional<std::string> loadShaderFile(std::string_view path);
 
 } // namespace ar_overlay

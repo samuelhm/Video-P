@@ -4,11 +4,13 @@
 
 #include <gst/gst.h>
 
+#include "config.hpp"
+
 namespace ar_overlay {
 
 class SpectrumAnalyzer {
 public:
-  static constexpr guint kDefaultBands = 16;
+  static constexpr guint kDefaultBands = kNumBands;
 
   SpectrumAnalyzer() = default;
 

@@ -6,11 +6,12 @@
 
 #include <gst/gst.h>
 
+#include "config.hpp"
+
 namespace ar_overlay {
 
 class GLRenderer {
 public:
-  static constexpr int kNumBands = 16;
   static constexpr float kDefaultBlurRadius = 15.0f;
   static constexpr float kDefaultSmoothingAlpha = 0.3f;
 
@@ -32,6 +33,7 @@ private:
   GstElement* glshader_ = nullptr;
   float smoothingAlpha_ = kDefaultSmoothingAlpha;
   std::array<float, kNumBands> smoothed_{};
+  std::array<std::string, kNumBands> uniformNames_{};
   bool smoothedInitialized_ = false;
   int width_ = 0;
   int height_ = 0;

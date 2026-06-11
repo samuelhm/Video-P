@@ -9,9 +9,6 @@
 namespace ar_overlay {
 
 Pipeline::Pipeline(std::string_view filePath) {
-  vertexSrc_ = loadShaderFile("shaders/default.vert");
-  fragmentSrc_ = loadShaderFile("shaders/eq_columns.frag");
-
   pipeline_.reset(gst_pipeline_new("main_pipeline"));
   GstElement* decodebin = gst_element_factory_make("uridecodebin", "decoder");
 
@@ -62,8 +59,6 @@ Pipeline::Pipeline(Pipeline&& other) noexcept
     , quitCb_(std::move(other.quitCb_))
     , sigintSource_(other.sigintSource_)
     , sigtermSource_(other.sigtermSource_)
-    , vertexSrc_(std::move(other.vertexSrc_))
-    , fragmentSrc_(std::move(other.fragmentSrc_))
 {
   other.paintable_ = nullptr;
   other.sigintSource_ = 0;
@@ -86,8 +81,6 @@ Pipeline& Pipeline::operator=(Pipeline&& other) noexcept {
     other.sigintSource_ = 0;
     sigtermSource_ = other.sigtermSource_;
     other.sigtermSource_ = 0;
-    vertexSrc_ = std::move(other.vertexSrc_);
-    fragmentSrc_ = std::move(other.fragmentSrc_);
   }
   return *this;
 }
@@ -220,7 +213,14 @@ void Pipeline::handleVideoPad(GstPad* newPad, const GstCaps* caps) {
   gst_structure_get_int(structure, "width", &width);
   gst_structure_get_int(structure, "height", &height);
 
-  renderer_.emplace(glshader, vertexSrc_, fragmentSrc_);
+  auto vertexSrc = loadShaderFile("shaders/default.vert");
+  auto fragmentSrc = loadShaderFile("shaders/eq_columns.frag");
+  if (!vertexSrc || !fragmentSrc) {
+    logError("Failed to load shaders — video will play without effects");
+    return;
+  }
+
+  renderer_.emplace(glshader, *vertexSrc, *fragmentSrc);
 
   gst_bin_add_many(GST_BIN(pipeline), videoconvert,
                    glupload, glshader, nullptr);
@@ -233,13 +233,13 @@ void Pipeline::handleVideoPad(GstPad* newPad, const GstCaps* caps) {
 
   gst_object_unref(glsinkbin);
 
-    GstPad* videoSinkPad = gst_element_get_static_pad(videoconvert, "sink");
-    GstPadLinkReturn linkResult = gst_pad_link(newPad, videoSinkPad);
-    gst_object_unref(videoSinkPad);
+  GstPad* videoSinkPad = gst_element_get_static_pad(videoconvert, "sink");
+  GstPadLinkReturn linkResult = gst_pad_link(newPad, videoSinkPad);
+  gst_object_unref(videoSinkPad);
 
-    if (linkResult != GST_PAD_LINK_OK) {
-      logWarning("Failed to link video GL pad");
-    }
+  if (linkResult != GST_PAD_LINK_OK) {
+    logWarning("Failed to link video GL pad");
+  }
 
   if (width > 0 && height > 0) {
     renderer_->setTextureSize(width, height);

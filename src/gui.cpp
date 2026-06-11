@@ -2,13 +2,12 @@
 
 #include <stdexcept>
 
+#include "config.hpp"
+
 namespace ar_overlay {
 
 GUI::GUI(int, char*[]) {
   gtk_init();
-
-  static constexpr int kDefaultWidth = 1920;
-  static constexpr int kDefaultHeight = 1080;
 
   app_ = gtk_application_new("dev.hurtadom.ar-overlay", G_APPLICATION_DEFAULT_FLAGS);
   if (!app_) {

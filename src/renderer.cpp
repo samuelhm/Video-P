@@ -14,6 +14,10 @@ GLRenderer::GLRenderer(GstElement* glshader, const std::string& vertexSrc,
     "fragment", fragmentSrc.c_str(),
     "update-shader", TRUE,
     nullptr);
+
+  for (int i = 0; i < kNumBands; ++i) {
+    uniformNames_[i] = "u_a[" + std::to_string(i) + "]";
+  }
 }
 
 void GLRenderer::setTextureSize(int width, int height) {
@@ -42,8 +46,7 @@ void GLRenderer::updateAmplitudes(const std::vector<float>& dBValues) {
       smoothed_[i] = linear;
     }
 
-    const std::string uniformName = "u_a[" + std::to_string(i) + "]";
-    gst_structure_set(uniforms, uniformName.c_str(), G_TYPE_FLOAT,
+    gst_structure_set(uniforms, uniformNames_[i].c_str(), G_TYPE_FLOAT,
                       static_cast<double>(smoothed_[i]), nullptr);
   }
   smoothedInitialized_ = true;

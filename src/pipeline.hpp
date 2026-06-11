@@ -66,9 +66,6 @@ private:
   std::function<void()> quitCb_;
   guint sigintSource_ = 0;
   guint sigtermSource_ = 0;
-
-  std::string vertexSrc_;
-  std::string fragmentSrc_;
 };
 
 } // namespace ar_overlay
