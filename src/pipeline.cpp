@@ -123,10 +123,11 @@ void Pipeline::onPadAdded(GstElement* /*src*/, GstPad* newPad, gpointer data) {
     GstElement* capsfilter = gst_element_factory_make("capsfilter", nullptr);
     GstElement* glupload = gst_element_factory_make("glupload", nullptr);
     GstElement* glshader = gst_element_factory_make("glshader", nullptr);
+    GstElement* glconvert = gst_element_factory_make("glcolorconvert", nullptr);
     GstElement* videosink = gst_element_factory_make("glimagesink", nullptr);
 
     if (!videoconvert || !videoscale || !capsfilter ||
-        !glupload || !glshader || !videosink) {
+        !glupload || !glshader || !glconvert || !videosink) {
       std::cerr << "Failed to create GL video elements\n";
       gst_caps_unref(caps);
       return;
@@ -151,16 +152,17 @@ void Pipeline::onPadAdded(GstElement* /*src*/, GstPad* newPad, gpointer data) {
                                loader.loadFragment("shaders/eq_columns.frag"));
 
     gst_bin_add_many(GST_BIN(pipeline), videoconvert, videoscale, capsfilter,
-                     glupload, glshader, videosink, nullptr);
+                     glupload, glshader, glconvert, videosink, nullptr);
     gst_element_sync_state_with_parent(videoconvert);
     gst_element_sync_state_with_parent(videoscale);
     gst_element_sync_state_with_parent(capsfilter);
     gst_element_sync_state_with_parent(glupload);
     gst_element_sync_state_with_parent(glshader);
+    gst_element_sync_state_with_parent(glconvert);
     gst_element_sync_state_with_parent(videosink);
 
     gst_element_link_many(videoconvert, videoscale, capsfilter,
-                          glupload, glshader, videosink, nullptr);
+                          glupload, glshader, glconvert, videosink, nullptr);
 
     GstPad* convSinkPad = gst_element_get_static_pad(videoconvert, "sink");
     GstPadLinkReturn ret = gst_pad_link(newPad, convSinkPad);
