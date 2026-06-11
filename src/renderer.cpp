@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 
 #include <cmath>
+#include <cstdio>
 
 namespace ar_overlay {
 
@@ -59,9 +60,12 @@ void GLRenderer::updateAmplitudes(const std::vector<float>& dBValues) {
     applyTextureUniforms(shader);
   }
 
-  gst_gl_shader_set_uniform_1fv(shader, "u_amplitudes",
-                                smoothedAmplitudes_.size(),
-                                smoothedAmplitudes_.data());
+  for (std::size_t i = 0; i < smoothedAmplitudes_.size(); ++i) {
+    char name[64];
+    std::snprintf(name, sizeof(name), "u_amplitudes[%u]",
+                  static_cast<unsigned>(i));
+    gst_gl_shader_set_uniform_1f(shader, name, smoothedAmplitudes_[i]);
+  }
 
   gst_object_unref(shader);
 }

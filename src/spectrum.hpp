@@ -8,7 +8,7 @@ namespace ar_overlay {
 
 class SpectrumAnalyzer {
 public:
-  static constexpr guint kDefaultBands = 64;
+  static constexpr guint kDefaultBands = 16;
 
   SpectrumAnalyzer() = default;
 
