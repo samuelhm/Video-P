@@ -1,6 +1,8 @@
 #include "pipeline.hpp"
 #include "shader_loader.hpp"
 
+#include <glib-unix.h>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -28,6 +30,9 @@ Pipeline::Pipeline(std::string_view filePath) {
   g_free(uri);
 
   mainLoop_.reset(g_main_loop_new(nullptr, FALSE));
+
+  g_unix_signal_add(SIGINT, onSignal, this);
+  g_unix_signal_add(SIGTERM, onSignal, this);
 
   GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline_.get()));
   gst_bus_add_watch(bus, onBusMessage, this);
@@ -167,6 +172,14 @@ gboolean Pipeline::onBusMessage(GstBus* /*bus*/, GstMessage* msg, gpointer data)
   return TRUE;
 }
 
+gboolean Pipeline::onSignal(gpointer data) {
+  auto* self = static_cast<Pipeline*>(data);
+  std::cout << "\nShutting down" << std::endl;
+  self->interrupted_ = true;
+  g_main_loop_quit(self->mainLoop_.get());
+  return G_SOURCE_REMOVE;
+}
+
 void Pipeline::handleMessage(GstMessage* msg) {
   if (spectrumAnalyzer_ && spectrumAnalyzer_->processMessage(msg)) {
     if (renderer_) {
@@ -191,7 +204,7 @@ void Pipeline::handleMessage(GstMessage* msg) {
       GError* err = nullptr;
       gchar* debug = nullptr;
       gst_message_parse_error(msg, &err, &debug);
-      std::cerr << "Error: " << err->message << "\n";
+      std::cerr << "Error: " << err->message << std::endl;
       g_error_free(err);
       g_free(debug);
       hasError_ = true;

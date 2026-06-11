@@ -57,6 +57,7 @@ public:
 private:
   static void onPadAdded(GstElement* src, GstPad* newPad, gpointer data);
   static gboolean onBusMessage(GstBus* bus, GstMessage* msg, gpointer data);
+  static gboolean onSignal(gpointer data);
 
   void handleMessage(GstMessage* msg);
 
@@ -66,6 +67,7 @@ private:
   std::optional<GLRenderer> renderer_;
   int spectrumFrameCount_ = 0;
   bool hasError_ = false;
+  bool interrupted_ = false;
 };
 
 } // namespace ar_overlay

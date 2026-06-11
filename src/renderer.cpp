@@ -3,7 +3,6 @@
 #include <gst/gl/gstglshader.h>
 
 #include <cmath>
-#include <iostream>
 
 namespace ar_overlay {
 
@@ -17,6 +16,7 @@ void GLRenderer::configure(GstElement* glshader, const std::string& vertexSrc,
     nullptr);
 
   configured_ = true;
+  smoothedAmplitudes_.clear();
 }
 
 void GLRenderer::setTextureSize(int width, int height) {
@@ -37,17 +37,29 @@ void GLRenderer::setTextureSize(int width, int height) {
 void GLRenderer::updateAmplitudes(const std::vector<float>& dBValues) {
   if (!configured_) return;
 
+  const std::size_t count = dBValues.size();
+
+  if (smoothedAmplitudes_.size() != count) {
+    smoothedAmplitudes_.resize(count, 0.0f);
+    for (std::size_t i = 0; i < count; ++i) {
+      smoothedAmplitudes_[i] = dBtoLinear(dBValues[i]);
+    }
+  } else {
+    const float alpha = smoothingAlpha_;
+    const float oneMinusAlpha = 1.0f - alpha;
+    for (std::size_t i = 0; i < count; ++i) {
+      const float target = dBtoLinear(dBValues[i]);
+      smoothedAmplitudes_[i] = smoothedAmplitudes_[i] * oneMinusAlpha + target * alpha;
+    }
+  }
+
   GstGLShader* shader = nullptr;
   g_object_get(G_OBJECT(glshader_), "shader", &shader, nullptr);
   if (!shader) return;
 
-  std::vector<float> linear(dBValues.size());
-  for (std::size_t i = 0; i < dBValues.size(); ++i) {
-    linear[i] = dBtoLinear(dBValues[i]);
-  }
-
   gst_gl_shader_set_uniform_1fv(shader, "u_amplitudes",
-                                linear.size(), linear.data());
+                                smoothedAmplitudes_.size(),
+                                smoothedAmplitudes_.data());
 
   gst_object_unref(shader);
 }

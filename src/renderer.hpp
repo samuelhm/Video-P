@@ -19,6 +19,7 @@ public:
   void configure(GstElement* glshader, const std::string& vertexSrc,
                  const std::string& fragmentSrc);
   void setTextureSize(int width, int height);
+  void setSmoothing(float alpha) { smoothingAlpha_ = alpha; }
   void updateAmplitudes(const std::vector<float>& dBValues);
 
 private:
@@ -27,6 +28,8 @@ private:
   void setUniform1f(const char* name, float value) const;
 
   GstElement* glshader_ = nullptr;
+  std::vector<float> smoothedAmplitudes_;
+  float smoothingAlpha_ = 0.3f;
   bool configured_ = false;
 };
 

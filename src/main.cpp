@@ -12,8 +12,8 @@
 
 #include <gst/gst.h>
 
+#include <filesystem>
 #include <iostream>
-#include <stdexcept>
 
 #include "pipeline.hpp"
 
@@ -25,8 +25,18 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  std::filesystem::path filePath(argv[1]);
+  if (!std::filesystem::exists(filePath)) {
+    std::cerr << "File not found: " << filePath << '\n';
+    return 1;
+  }
+  if (!std::filesystem::is_regular_file(filePath)) {
+    std::cerr << "Not a regular file: " << filePath << '\n';
+    return 1;
+  }
+
   try {
-    ar_overlay::Pipeline pipeline(argv[1]);
+    ar_overlay::Pipeline pipeline(filePath.native());
     if (!pipeline.run()) {
       return 1;
     }
