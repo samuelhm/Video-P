@@ -2,7 +2,9 @@
 
 #include <gst/gl/gstglshader.h>
 
+#include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace ar_overlay {
 
@@ -57,6 +59,15 @@ void GLRenderer::updateAmplitudes(const std::vector<float>& dBValues) {
   g_object_get(G_OBJECT(glshader_), "shader", &shader, nullptr);
   if (!shader) return;
 
+  static int dbgCount = 0;
+  if (++dbgCount % 30 == 0) {
+    std::cout << "Linear amps: ";
+    for (std::size_t i = 0; i < std::min(smoothedAmplitudes_.size(), std::size_t{6}); ++i) {
+      std::cout << smoothedAmplitudes_[i] << " ";
+    }
+    std::cout << std::endl;
+  }
+
   gst_gl_shader_set_uniform_1fv(shader, "u_amplitudes",
                                 smoothedAmplitudes_.size(),
                                 smoothedAmplitudes_.data());
@@ -67,7 +78,7 @@ void GLRenderer::updateAmplitudes(const std::vector<float>& dBValues) {
 float GLRenderer::dBtoLinear(float dB) {
   if (dB <= -60.0f) return 0.0f;
   if (dB >= 0.0f) return 1.0f;
-  return std::pow(10.0f, dB / 20.0f);
+  return (dB + 60.0f) / 60.0f;
 }
 
 void GLRenderer::setUniform1fv(const char* name,
