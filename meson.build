@@ -14,10 +14,12 @@ add_project_arguments(
 )
 
 gst_dep = dependency('gstreamer-1.0', version : '>=1.20')
+gst_gl_dep = dependency('gstreamer-gl-1.0', version : '>=1.20')
 
 executable('ar-overlay',
   'src/main.cpp',
   'src/pipeline.cpp',
   'src/spectrum.cpp',
   'src/shader_loader.cpp',
-  dependencies : [gst_dep])
+  'src/renderer.cpp',
+  dependencies : [gst_dep, gst_gl_dep])

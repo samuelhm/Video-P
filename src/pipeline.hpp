@@ -18,6 +18,7 @@
 #include <string_view>
 
 #include "spectrum.hpp"
+#include "renderer.hpp"
 
 namespace ar_overlay {
 
@@ -62,6 +63,7 @@ private:
   GMainLoopPtr mainLoop_;
   GstElementPtr pipeline_;
   std::optional<SpectrumAnalyzer> spectrumAnalyzer_;
+  std::optional<GLRenderer> renderer_;
   int spectrumFrameCount_ = 0;
   bool hasError_ = false;
 };
