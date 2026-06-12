@@ -229,7 +229,7 @@ if (edgeMax > 0.0) {
 ## Estructura del Proyecto
 
 ```
-gstreamer-ar-overlay/
+Video-P/
 ├── assets/                        # Videos demo
 │   └── 2026-06-11 14-49-30.mp4
 ├── shaders/                       # Archivos GLSL
@@ -278,7 +278,7 @@ meson compile -C builddir
 ## Uso
 
 ```bash
-./builddir/ar-overlay <archivo.mp4>
+./builddir/Video-P <archivo.mp4>
 ```
 
 El reproductor abre una ventana GTK4 a 1920×1080. El video se reproduce con el efecto de columnas reactivas al audio. Ctrl+C o cerrar la ventana termina la ejecución.
